@@ -1,12 +1,13 @@
 package main
 
 import "fmt"
-import "os"
 import "log"
 import "bytes"
 import "io"
+import "net"
 
-func ReadLinesByReader(f io.ReadCloser) <- chan string {
+
+func readLinesChannel(f io.ReadCloser) <- chan string {
 
 	out := make(chan string,1)
 
@@ -56,19 +57,28 @@ func ReadLinesByReader(f io.ReadCloser) <- chan string {
 
 func main() {
 
-	file,error := os.Open("message.txt")
+	listener , err := net.Listen("tcp",":42069")
 
-	if error != nil {
-		log.Fatal("error","error",error)
+	
+	if err != nil {
+		log.Fatal("error","error",err)
 	}
 
+	defer listener.Close()
 
-	linesCh :=  ReadLinesByReader(file)
+	for {
+		conn,err := listener.Accept()	
+		
+		if err != nil {
+			log.Fatal("error","error",err)
+		}
 
-	for l := range linesCh {
-		fmt.Printf("read : %s\n",l)
-		
-		
+
+
+		for l := range readLinesChannel(conn)  {
+
+			fmt.Printf("read: %s\n",l)
+		}
+
 	}
-
 }
